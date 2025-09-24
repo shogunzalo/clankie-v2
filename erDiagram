@@ -1,0 +1,320 @@
+erDiagram
+    BUSINESSES {
+        int id PK
+        string company_name
+        string business_type
+        string owner_name
+        string owner_email UK
+        string phone
+        string website
+        string primary_language
+        boolean auto_detect_language
+        string timezone
+        string subscription_plan
+        string subscription_status
+        boolean onboarding_completed
+        string setup_step
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    BUSINESS_LANGUAGES {
+        int id PK
+        int business_id FK
+        string language_code
+        boolean is_primary
+        timestamp created_at
+    }
+
+    SECTION_TEMPLATES {
+        int id PK
+        string section_key UK
+        boolean is_required
+        int display_order
+        int character_min
+        int character_max
+        timestamp created_at
+    }
+
+    SECTION_TEMPLATE_TRANSLATIONS {
+        int id PK
+        int template_id FK
+        string language_code
+        string section_name
+        text description
+        text placeholder_text
+        text example_content
+    }
+
+    BUSINESS_TEMPLATE_RESPONSES {
+        int id PK
+        int business_id FK
+        int template_id FK
+        string language_code
+        text content
+        vector content_embedding
+        string embedding_model
+        timestamp embedding_updated_at
+        int character_count
+        int word_count
+        string completion_status
+        int search_hits
+        timestamp last_accessed
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    BUSINESS_CONTEXT_SECTIONS {
+        int id PK
+        int business_id FK
+        string section_type
+        string section_key
+        string language_code
+        string section_name
+        text content
+        vector content_embedding
+        string embedding_model
+        timestamp embedding_updated_at
+        boolean is_active
+        int display_order
+        int character_count
+        int word_count
+        string completion_status
+        int search_hits
+        timestamp last_accessed
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    FAQ_ITEMS {
+        int id PK
+        int business_id FK
+        string language_code
+        text question
+        text answer
+        vector question_embedding
+        vector answer_embedding
+        vector combined_embedding
+        string embedding_model
+        timestamp embedding_updated_at
+        string category
+        boolean is_active
+        int usage_count
+        decimal success_rate
+        timestamp last_used
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    FAQ_KEYWORDS {
+        int id PK
+        int faq_id FK
+        string keyword
+        decimal weight
+        timestamp created_at
+    }
+
+    CONTACT_INFO {
+        int id PK
+        int business_id FK
+        string info_type
+        string label
+        text value
+        string language_code
+        int priority
+        boolean is_primary
+        boolean is_active
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    SERVICES {
+        int id PK
+        int business_id FK
+        string language_code
+        string service_name
+        text description
+        decimal price
+        string currency
+        int duration_minutes
+        string category
+        boolean is_active
+        int display_order
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    PLATFORM_SOURCES {
+        int id PK
+        int business_id FK
+        string platform_type
+        string platform_name
+        boolean is_connected
+        string connection_status
+        json credentials
+        string webhook_url
+        json configuration
+        int total_messages
+        int active_conversations
+        timestamp last_sync
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    CLIENTS {
+        int id PK
+        int business_id FK
+        string platform_user_id
+        string platform_type
+        string display_name
+        string full_name
+        string email
+        string phone
+        string company_name
+        string preferred_language
+        string timezone
+        timestamp first_contact
+        timestamp last_contact
+        int total_conversations
+        int total_leads
+        string relationship_status
+        int engagement_score
+        decimal lifetime_value
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    CONVERSATIONS {
+        int id PK
+        int business_id FK
+        int client_id FK
+        int source_id FK
+        string detected_language
+        string conversation_language
+        text conversation_summary
+        string customer_intent
+        int lead_score
+        decimal sentiment_score
+        boolean requires_human
+        text human_takeover_reason
+        int assigned_agent_id
+        boolean is_bot_active
+        string current_state
+        int message_count
+        timestamp last_activity
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    MESSAGES {
+        int id PK
+        int conversation_id FK
+        string sender_type
+        text message_text
+        string original_language
+        vector message_embedding
+        string platform_message_id
+        json message_metadata
+        json extracted_entities
+        string detected_language
+        decimal sentiment_score
+        string intent_classification
+        timestamp message_timestamp
+    }
+
+    LEADS {
+        int id PK
+        int business_id FK
+        int client_id FK
+        int conversation_id FK
+        string lead_source
+        string lead_type
+        string current_stage
+        string previous_stage
+        int stage_progression_count
+        int qualification_score
+        int interest_level
+        int engagement_level
+        text service_interest
+        string budget_indication
+        string timeline_indication
+        string decision_maker_status
+        string converted_to
+        decimal conversion_value
+        string lost_reason
+        timestamp stage_entered_at
+        int time_in_current_stage
+        int total_funnel_time
+        string final_outcome
+        timestamp outcome_date
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    LEAD_STAGE_HISTORY {
+        int id PK
+        int lead_id FK
+        string from_stage
+        string to_stage
+        string progression_type
+        string trigger_event
+        string changed_by
+        decimal confidence_score
+        json qualifying_factors
+        json disqualifying_factors
+        int time_in_previous_stage
+        text conversation_context
+        timestamp changed_at
+    }
+
+    UNANSWERED_QUESTIONS {
+        int id PK
+        int business_id FK
+        int conversation_id FK
+        text question
+        string question_language
+        text context
+        int frequency
+        timestamp first_asked
+        timestamp last_asked
+        string status
+        string resolution_type
+        text admin_response
+        string admin_response_language
+        timestamp resolved_at
+    }
+
+    %% Core Business Relationships
+    BUSINESSES ||--o{ BUSINESS_LANGUAGES : "supports"
+    BUSINESSES ||--o{ BUSINESS_TEMPLATE_RESPONSES : "completes"
+    BUSINESSES ||--o{ BUSINESS_CONTEXT_SECTIONS : "has"
+    BUSINESSES ||--o{ FAQ_ITEMS : "has"
+    BUSINESSES ||--o{ CONTACT_INFO : "has"
+    BUSINESSES ||--o{ SERVICES : "offers"
+    BUSINESSES ||--o{ PLATFORM_SOURCES : "connects"
+    BUSINESSES ||--o{ CLIENTS : "serves"
+    BUSINESSES ||--o{ CONVERSATIONS : "manages"
+    BUSINESSES ||--o{ LEADS : "tracks"
+    BUSINESSES ||--o{ UNANSWERED_QUESTIONS : "collects"
+
+    %% Template System
+    SECTION_TEMPLATES ||--o{ SECTION_TEMPLATE_TRANSLATIONS : "translates"
+    SECTION_TEMPLATES ||--o{ BUSINESS_TEMPLATE_RESPONSES : "generates"
+
+    %% Normalized Relationships
+    FAQ_ITEMS ||--o{ FAQ_KEYWORDS : "has"
+
+    %% Client Journey
+    CLIENTS ||--o{ CONVERSATIONS : "initiates"
+    CLIENTS ||--o{ LEADS : "becomes"
+
+    %% Platform & Communication
+    PLATFORM_SOURCES ||--o{ CONVERSATIONS : "generates"
+
+    %% Conversation Flow
+    CONVERSATIONS ||--o{ MESSAGES : "contains"
+    CONVERSATIONS ||--o{ LEADS : "creates"
+    CONVERSATIONS ||--o{ UNANSWERED_QUESTIONS : "produces"
+
+    %% Lead Qualification Funnel
+    LEADS ||--o{ LEAD_STAGE_HISTORY : "progresses"
