@@ -1,248 +1,248 @@
 name: Code Quality
 
 on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main, develop ]
+    push:
+        branches: [main, develop]
+    pull_request:
+        branches: [main, develop]
 
 jobs:
-  code-quality:
-    name: Code Quality Checks
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+    code-quality:
+        name: Code Quality Checks
+        runs-on: ubuntu-latest
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20.x'
-        cache: 'npm'
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
 
-    - name: Install dependencies
-      run: npm ci
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "20.x"
+                  cache: "npm"
 
-    - name: Run ESLint
-      run: |
-        if [ -f ".eslintrc.js" ] || [ -f ".eslintrc.json" ] || [ -f "eslint.config.js" ]; then
-          npm run lint
-        else
-          echo "ESLint not configured, skipping..."
-        fi
+            - name: Install dependencies
+              run: npm ci
 
-    - name: Run Prettier
-      run: |
-        if [ -f ".prettierrc" ] || [ -f ".prettierrc.js" ] || [ -f "prettier.config.js" ]; then
-          npm run format:check || echo "Prettier not configured, skipping..."
-        else
-          echo "Prettier not configured, skipping..."
-        fi
+            - name: Run ESLint
+              run: |
+                  if [ -f ".eslintrc.js" ] || [ -f ".eslintrc.json" ] || [ -f "eslint.config.js" ]; then
+                    npm run lint
+                  else
+                    echo "ESLint not configured, skipping..."
+                  fi
 
-    - name: Check code formatting
-      run: |
-        echo "Checking code formatting..."
-        # Check for consistent indentation
-        if find src tests -name "*.js" -exec grep -l $'\t' {} \; | head -1; then
-          echo "❌ Found files with tabs instead of spaces"
-          exit 1
-        else
-          echo "✅ No tab indentation found"
-        fi
-        
-        # Check for trailing whitespace
-        if find src tests -name "*.js" -exec grep -l '[[:space:]]$' {} \; | head -1; then
-          echo "❌ Found files with trailing whitespace"
-          exit 1
-        else
-          echo "✅ No trailing whitespace found"
-        fi
+            - name: Run Prettier
+              run: |
+                  if [ -f ".prettierrc" ] || [ -f ".prettierrc.js" ] || [ -f "prettier.config.js" ]; then
+                    npm run format:check || echo "Prettier not configured, skipping..."
+                  else
+                    echo "Prettier not configured, skipping..."
+                  fi
 
-    - name: Check for console.log statements
-      run: |
-        echo "Checking for console.log statements in production code..."
-        if find src -name "*.js" -exec grep -l "console\.log" {} \; | head -1; then
-          echo "⚠️  Found console.log statements in production code"
-          echo "Consider using a proper logging library"
-        else
-          echo "✅ No console.log statements found in production code"
-        fi
+            - name: Check code formatting
+              run: |
+                  echo "Checking code formatting..."
+                  # Check for consistent indentation
+                  if find src tests -name "*.js" -exec grep -l $'\t' {} \; | head -1; then
+                    echo "❌ Found files with tabs instead of spaces"
+                    exit 1
+                  else
+                    echo "✅ No tab indentation found"
+                  fi
 
-    - name: Check for TODO/FIXME comments
-      run: |
-        echo "Checking for TODO/FIXME comments..."
-        if find src -name "*.js" -exec grep -l "TODO\|FIXME" {} \; | head -1; then
-          echo "📝 Found TODO/FIXME comments:"
-          find src -name "*.js" -exec grep -n "TODO\|FIXME" {} \;
-        else
-          echo "✅ No TODO/FIXME comments found"
-        fi
+                  # Check for trailing whitespace
+                  if find src tests -name "*.js" -exec grep -l '[[:space:]]$' {} \; | head -1; then
+                    echo "❌ Found files with trailing whitespace"
+                    exit 1
+                  else
+                    echo "✅ No trailing whitespace found"
+                  fi
 
-    - name: Check for unused dependencies
-      run: |
-        echo "Checking for unused dependencies..."
-        if command -v depcheck &> /dev/null; then
-          npx depcheck || echo "Some dependencies may be unused"
-        else
-          echo "depcheck not available, skipping dependency check"
-        fi
+            - name: Check for console.log statements
+              run: |
+                  echo "Checking for console.log statements in production code..."
+                  if find src -name "*.js" -exec grep -l "console\.log" {} \; | head -1; then
+                    echo "⚠️  Found console.log statements in production code"
+                    echo "Consider using a proper logging library"
+                  else
+                    echo "✅ No console.log statements found in production code"
+                  fi
 
-    - name: Check for security vulnerabilities in dependencies
-      run: |
-        echo "Checking for security vulnerabilities..."
-        npm audit --audit-level=high || echo "Security audit completed"
+            - name: Check for TODO/FIXME comments
+              run: |
+                  echo "Checking for TODO/FIXME comments..."
+                  if find src -name "*.js" -exec grep -l "TODO\|FIXME" {} \; | head -1; then
+                    echo "📝 Found TODO/FIXME comments:"
+                    find src -name "*.js" -exec grep -n "TODO\|FIXME" {} \;
+                  else
+                    echo "✅ No TODO/FIXME comments found"
+                  fi
 
-    - name: Generate code quality report
-      run: |
-        echo "# Code Quality Report" > code-quality-report.md
-        echo "Generated on: $(date)" >> code-quality-report.md
-        echo "" >> code-quality-report.md
-        
-        echo "## File Statistics" >> code-quality-report.md
-        echo "Total JavaScript files: $(find src tests -name "*.js" | wc -l)" >> code-quality-report.md
-        echo "Total lines of code: $(find src tests -name "*.js" -exec wc -l {} + | tail -1 | awk '{print $1}')" >> code-quality-report.md
-        echo "" >> code-quality-report.md
-        
-        echo "## Test Coverage" >> code-quality-report.md
-        if [ -d "coverage" ]; then
-          echo "Test coverage report available in coverage directory" >> code-quality-report.md
-        else
-          echo "No test coverage report found" >> code-quality-report.md
-        fi
-        echo "" >> code-quality-report.md
-        
-        echo "## Dependencies" >> code-quality-report.md
-        echo "Total dependencies: $(npm list --depth=0 | wc -l)" >> code-quality-report.md
-        echo "Dev dependencies: $(npm list --depth=0 --dev | wc -l)" >> code-quality-report.md
+            - name: Check for unused dependencies
+              run: |
+                  echo "Checking for unused dependencies..."
+                  if command -v depcheck &> /dev/null; then
+                    npx depcheck || echo "Some dependencies may be unused"
+                  else
+                    echo "depcheck not available, skipping dependency check"
+                  fi
 
-    - name: Upload code quality report
-      uses: actions/upload-artifact@v3
-      with:
-        name: code-quality-report
-        path: code-quality-report.md
-        retention-days: 30
+            - name: Check for security vulnerabilities in dependencies
+              run: |
+                  echo "Checking for security vulnerabilities..."
+                  npm audit --audit-level=high || echo "Security audit completed"
 
-  test-coverage:
-    name: Test Coverage
-    runs-on: ubuntu-latest
-    
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_USER: postgres
-          POSTGRES_DB: clankie_test_db
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
+            - name: Generate code quality report
+              run: |
+                  echo "# Code Quality Report" > code-quality-report.md
+                  echo "Generated on: $(date)" >> code-quality-report.md
+                  echo "" >> code-quality-report.md
 
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+                  echo "## File Statistics" >> code-quality-report.md
+                  echo "Total JavaScript files: $(find src tests -name "*.js" | wc -l)" >> code-quality-report.md
+                  echo "Total lines of code: $(find src tests -name "*.js" -exec wc -l {} + | tail -1 | awk '{print $1}')" >> code-quality-report.md
+                  echo "" >> code-quality-report.md
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20.x'
-        cache: 'npm'
+                  echo "## Test Coverage" >> code-quality-report.md
+                  if [ -d "coverage" ]; then
+                    echo "Test coverage report available in coverage directory" >> code-quality-report.md
+                  else
+                    echo "No test coverage report found" >> code-quality-report.md
+                  fi
+                  echo "" >> code-quality-report.md
 
-    - name: Install dependencies
-      run: npm ci
+                  echo "## Dependencies" >> code-quality-report.md
+                  echo "Total dependencies: $(npm list --depth=0 | wc -l)" >> code-quality-report.md
+                  echo "Dev dependencies: $(npm list --depth=0 --dev | wc -l)" >> code-quality-report.md
 
-    - name: Create test environment file
-      run: |
-        cat > .env.test << EOF
-        NODE_ENV=test
-        PORT=3000
-        DB_HOST=localhost
-        DB_PORT=5432
-        DB_USER=postgres
-        DB_PASSWORD=postgres
-        DB_NAME=clankie_test_db
-        DB_NAME_TEST=clankie_test_db
-        JWT_SECRET=test_jwt_secret_key_for_ci_cd_pipeline
-        FRONTEND_URL=http://localhost:3000
-        INSTAGRAM_TEST_TOKEN=test_instagram_token
-        VERIFY_TOKEN=test_verify_token
-        CREATE_FIXED_CONNECTION=true
-        OPENAI_API_KEY=test_openai_key
-        EOF
+            - name: Upload code quality report
+              uses: actions/upload-artifact@v4
+              with:
+                  name: code-quality-report
+                  path: code-quality-report.md
+                  retention-days: 30
 
-    - name: Wait for PostgreSQL
-      run: |
-        until pg_isready -h localhost -p 5432 -U postgres; do
-          echo "Waiting for PostgreSQL to be ready..."
-          sleep 2
-        done
+    test-coverage:
+        name: Test Coverage
+        runs-on: ubuntu-latest
 
-    - name: Run database migrations
-      run: npm run migrate
-      env:
-        NODE_ENV: test
-        DB_HOST: localhost
-        DB_PORT: 5432
-        DB_USER: postgres
-        DB_PASSWORD: postgres
-        DB_NAME: clankie_test_db
+        services:
+            postgres:
+                image: postgres:15
+                env:
+                    POSTGRES_PASSWORD: postgres
+                    POSTGRES_USER: postgres
+                    POSTGRES_DB: clankie_test_db
+                options: >-
+                    --health-cmd pg_isready
+                    --health-interval 10s
+                    --health-timeout 5s
+                    --health-retries 5
+                ports:
+                    - 5432:5432
 
-    - name: Run tests with coverage
-      run: npm run test:coverage
-      env:
-        NODE_ENV: test
-        DB_HOST: localhost
-        DB_PORT: 5432
-        DB_USER: postgres
-        DB_PASSWORD: postgres
-        DB_NAME: clankie_test_db
-        JWT_SECRET: test_jwt_secret_key_for_ci_cd_pipeline
-        OPENAI_API_KEY: test_openai_key
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
 
-    - name: Upload coverage reports
-      uses: actions/upload-artifact@v3
-      with:
-        name: coverage-reports
-        path: coverage/
-        retention-days: 30
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "20.x"
+                  cache: "npm"
 
-    - name: Comment coverage on PR
-      if: github.event_name == 'pull_request'
-      uses: actions/github-script@v6
-      with:
-        script: |
-          const fs = require('fs');
-          const path = require('path');
-          
-          try {
-            const coveragePath = path.join('coverage', 'lcov-report', 'index.html');
-            if (fs.existsSync(coveragePath)) {
-              const coverage = fs.readFileSync(coveragePath, 'utf8');
-              const match = coverage.match(/(\d+\.?\d*)%/);
-              const percentage = match ? match[1] : 'Unknown';
-              
-              github.rest.issues.createComment({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: `## 📊 Test Coverage Report\n\n**Coverage: ${percentage}%**\n\nDetailed coverage report is available in the workflow artifacts.`
-              });
-            }
-          } catch (error) {
-            console.log('Could not generate coverage comment:', error.message);
-          }
+            - name: Install dependencies
+              run: npm ci
 
-    - name: Cleanup database
-      if: always()
-      run: npm run migrate:undo:all
-      env:
-        NODE_ENV: test
-        DB_HOST: localhost
-        DB_PORT: 5432
-        DB_USER: postgres
-        DB_PASSWORD: postgres
-        DB_NAME: clankie_test_db
+            - name: Create test environment file
+              run: |
+                  cat > .env.test << EOF
+                  NODE_ENV=test
+                  PORT=3000
+                  DB_HOST=localhost
+                  DB_PORT=5432
+                  DB_USER=postgres
+                  DB_PASSWORD=postgres
+                  DB_NAME=clankie_test_db
+                  DB_NAME_TEST=clankie_test_db
+                  JWT_SECRET=test_jwt_secret_key_for_ci_cd_pipeline
+                  FRONTEND_URL=http://localhost:3000
+                  INSTAGRAM_TEST_TOKEN=test_instagram_token
+                  VERIFY_TOKEN=test_verify_token
+                  CREATE_FIXED_CONNECTION=true
+                  OPENAI_API_KEY=test_openai_key
+                  EOF
+
+            - name: Wait for PostgreSQL
+              run: |
+                  until pg_isready -h localhost -p 5432 -U postgres; do
+                    echo "Waiting for PostgreSQL to be ready..."
+                    sleep 2
+                  done
+
+            - name: Run database migrations
+              run: npm run migrate
+              env:
+                  NODE_ENV: test
+                  DB_HOST: localhost
+                  DB_PORT: 5432
+                  DB_USER: postgres
+                  DB_PASSWORD: postgres
+                  DB_NAME: clankie_test_db
+
+            - name: Run tests with coverage
+              run: npm run test:coverage
+              env:
+                  NODE_ENV: test
+                  DB_HOST: localhost
+                  DB_PORT: 5432
+                  DB_USER: postgres
+                  DB_PASSWORD: postgres
+                  DB_NAME: clankie_test_db
+                  JWT_SECRET: test_jwt_secret_key_for_ci_cd_pipeline
+                  OPENAI_API_KEY: test_openai_key
+
+            - name: Upload coverage reports
+              uses: actions/upload-artifact@v4
+              with:
+                  name: coverage-reports
+                  path: coverage/
+                  retention-days: 30
+
+            - name: Comment coverage on PR
+              if: github.event_name == 'pull_request'
+              uses: actions/github-script@v6
+              with:
+                  script: |
+                      const fs = require('fs');
+                      const path = require('path');
+
+                      try {
+                        const coveragePath = path.join('coverage', 'lcov-report', 'index.html');
+                        if (fs.existsSync(coveragePath)) {
+                          const coverage = fs.readFileSync(coveragePath, 'utf8');
+                          const match = coverage.match(/(\d+\.?\d*)%/);
+                          const percentage = match ? match[1] : 'Unknown';
+                          
+                          github.rest.issues.createComment({
+                            issue_number: context.issue.number,
+                            owner: context.repo.owner,
+                            repo: context.repo.repo,
+                            body: `## 📊 Test Coverage Report\n\n**Coverage: ${percentage}%**\n\nDetailed coverage report is available in the workflow artifacts.`
+                          });
+                        }
+                      } catch (error) {
+                        console.log('Could not generate coverage comment:', error.message);
+                      }
+
+            - name: Cleanup database
+              if: always()
+              run: npm run migrate:undo:all
+              env:
+                  NODE_ENV: test
+                  DB_HOST: localhost
+                  DB_PORT: 5432
+                  DB_USER: postgres
+                  DB_PASSWORD: postgres
+                  DB_NAME: clankie_test_db

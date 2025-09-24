@@ -1,168 +1,168 @@
 name: Test Matrix
 
 on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main, develop ]
-  schedule:
-    # Run daily at 2 AM UTC to catch any regressions
-    - cron: '0 2 * * *'
+    push:
+        branches: [main, develop]
+    pull_request:
+        branches: [main, develop]
+    schedule:
+        # Run daily at 2 AM UTC to catch any regressions
+        - cron: "0 2 * * *"
 
 jobs:
-  test-matrix:
-    name: Test Matrix
-    runs-on: ubuntu-latest
-    
-    strategy:
-      fail-fast: false
-      matrix:
-        node-version: [18.x, 20.x, 21.x]
-        postgres-version: [14, 15, 16]
-        include:
-          - node-version: 18.x
-            postgres-version: 15
-            test-type: "unit"
-          - node-version: 20.x
-            postgres-version: 15
-            test-type: "integration"
-          - node-version: 20.x
-            postgres-version: 16
-            test-type: "e2e"
+    test-matrix:
+        name: Test Matrix
+        runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: postgres:${{ matrix.postgres-version }}
-        env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_USER: postgres
-          POSTGRES_DB: clankie_test_db
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
+        strategy:
+            fail-fast: false
+            matrix:
+                node-version: [18.x, 20.x, 21.x]
+                postgres-version: [14, 15, 16]
+                include:
+                    - node-version: 18.x
+                      postgres-version: 15
+                      test-type: "unit"
+                    - node-version: 20.x
+                      postgres-version: 15
+                      test-type: "integration"
+                    - node-version: 20.x
+                      postgres-version: 16
+                      test-type: "e2e"
 
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+        services:
+            postgres:
+                image: postgres:${{ matrix.postgres-version }}
+                env:
+                    POSTGRES_PASSWORD: postgres
+                    POSTGRES_USER: postgres
+                    POSTGRES_DB: clankie_test_db
+                options: >-
+                    --health-cmd pg_isready
+                    --health-interval 10s
+                    --health-timeout 5s
+                    --health-retries 5
+                ports:
+                    - 5432:5432
 
-    - name: Setup Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
 
-    - name: Install dependencies
-      run: npm ci
+            - name: Setup Node.js ${{ matrix.node-version }}
+              uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ matrix.node-version }}
+                  cache: "npm"
 
-    - name: Create test environment file
-      run: |
-        cat > .env.test << EOF
-        NODE_ENV=test
-        PORT=3000
-        DB_HOST=localhost
-        DB_PORT=5432
-        DB_USER=postgres
-        DB_PASSWORD=postgres
-        DB_NAME=clankie_test_db
-        DB_NAME_TEST=clankie_test_db
-        JWT_SECRET=test_jwt_secret_key_for_ci_cd_pipeline
-        FRONTEND_URL=http://localhost:3000
-        INSTAGRAM_TEST_TOKEN=test_instagram_token
-        VERIFY_TOKEN=test_verify_token
-        CREATE_FIXED_CONNECTION=true
-        OPENAI_API_KEY=test_openai_key
-        EOF
+            - name: Install dependencies
+              run: npm ci
 
-    - name: Wait for PostgreSQL
-      run: |
-        until pg_isready -h localhost -p 5432 -U postgres; do
-          echo "Waiting for PostgreSQL to be ready..."
-          sleep 2
-        done
+            - name: Create test environment file
+              run: |
+                  cat > .env.test << EOF
+                  NODE_ENV=test
+                  PORT=3000
+                  DB_HOST=localhost
+                  DB_PORT=5432
+                  DB_USER=postgres
+                  DB_PASSWORD=postgres
+                  DB_NAME=clankie_test_db
+                  DB_NAME_TEST=clankie_test_db
+                  JWT_SECRET=test_jwt_secret_key_for_ci_cd_pipeline
+                  FRONTEND_URL=http://localhost:3000
+                  INSTAGRAM_TEST_TOKEN=test_instagram_token
+                  VERIFY_TOKEN=test_verify_token
+                  CREATE_FIXED_CONNECTION=true
+                  OPENAI_API_KEY=test_openai_key
+                  EOF
 
-    - name: Run database migrations
-      run: npm run migrate
-      env:
-        NODE_ENV: test
-        DB_HOST: localhost
-        DB_PORT: 5432
-        DB_USER: postgres
-        DB_PASSWORD: postgres
-        DB_NAME: clankie_test_db
+            - name: Wait for PostgreSQL
+              run: |
+                  until pg_isready -h localhost -p 5432 -U postgres; do
+                    echo "Waiting for PostgreSQL to be ready..."
+                    sleep 2
+                  done
 
-    - name: Run unit tests
-      if: matrix.test-type == 'unit'
-      run: npm test -- --testPathPattern="(?!integration)"
-      env:
-        NODE_ENV: test
-        DB_HOST: localhost
-        DB_PORT: 5432
-        DB_USER: postgres
-        DB_PASSWORD: postgres
-        DB_NAME: clankie_test_db
-        JWT_SECRET: test_jwt_secret_key_for_ci_cd_pipeline
-        OPENAI_API_KEY: test_openai_key
+            - name: Run database migrations
+              run: npm run migrate
+              env:
+                  NODE_ENV: test
+                  DB_HOST: localhost
+                  DB_PORT: 5432
+                  DB_USER: postgres
+                  DB_PASSWORD: postgres
+                  DB_NAME: clankie_test_db
 
-    - name: Run integration tests
-      if: matrix.test-type == 'integration'
-      run: npm test -- --testPathPattern="integration"
-      env:
-        NODE_ENV: test
-        DB_HOST: localhost
-        DB_PORT: 5432
-        DB_USER: postgres
-        DB_PASSWORD: postgres
-        DB_NAME: clankie_test_db
-        JWT_SECRET: test_jwt_secret_key_for_ci_cd_pipeline
-        OPENAI_API_KEY: test_openai_key
+            - name: Run unit tests
+              if: matrix.test-type == 'unit'
+              run: npm test -- --testPathPattern="(?!integration)"
+              env:
+                  NODE_ENV: test
+                  DB_HOST: localhost
+                  DB_PORT: 5432
+                  DB_USER: postgres
+                  DB_PASSWORD: postgres
+                  DB_NAME: clankie_test_db
+                  JWT_SECRET: test_jwt_secret_key_for_ci_cd_pipeline
+                  OPENAI_API_KEY: test_openai_key
 
-    - name: Run end-to-end tests
-      if: matrix.test-type == 'e2e'
-      run: npm test -- --testPathPattern="e2e"
-      env:
-        NODE_ENV: test
-        DB_HOST: localhost
-        DB_PORT: 5432
-        DB_USER: postgres
-        DB_PASSWORD: postgres
-        DB_NAME: clankie_test_db
-        JWT_SECRET: test_jwt_secret_key_for_ci_cd_pipeline
-        OPENAI_API_KEY: test_openai_key
+            - name: Run integration tests
+              if: matrix.test-type == 'integration'
+              run: npm test -- --testPathPattern="integration"
+              env:
+                  NODE_ENV: test
+                  DB_HOST: localhost
+                  DB_PORT: 5432
+                  DB_USER: postgres
+                  DB_PASSWORD: postgres
+                  DB_NAME: clankie_test_db
+                  JWT_SECRET: test_jwt_secret_key_for_ci_cd_pipeline
+                  OPENAI_API_KEY: test_openai_key
 
-    - name: Run all tests (fallback)
-      if: matrix.test-type != 'unit' && matrix.test-type != 'integration' && matrix.test-type != 'e2e'
-      run: npm test
-      env:
-        NODE_ENV: test
-        DB_HOST: localhost
-        DB_PORT: 5432
-        DB_USER: postgres
-        DB_PASSWORD: postgres
-        DB_NAME: clankie_test_db
-        JWT_SECRET: test_jwt_secret_key_for_ci_cd_pipeline
-        OPENAI_API_KEY: test_openai_key
+            - name: Run end-to-end tests
+              if: matrix.test-type == 'e2e'
+              run: npm test -- --testPathPattern="e2e"
+              env:
+                  NODE_ENV: test
+                  DB_HOST: localhost
+                  DB_PORT: 5432
+                  DB_USER: postgres
+                  DB_PASSWORD: postgres
+                  DB_NAME: clankie_test_db
+                  JWT_SECRET: test_jwt_secret_key_for_ci_cd_pipeline
+                  OPENAI_API_KEY: test_openai_key
 
-    - name: Cleanup database
-      if: always()
-      run: npm run migrate:undo:all
-      env:
-        NODE_ENV: test
-        DB_HOST: localhost
-        DB_PORT: 5432
-        DB_USER: postgres
-        DB_PASSWORD: postgres
-        DB_NAME: clankie_test_db
+            - name: Run all tests (fallback)
+              if: matrix.test-type != 'unit' && matrix.test-type != 'integration' && matrix.test-type != 'e2e'
+              run: npm test
+              env:
+                  NODE_ENV: test
+                  DB_HOST: localhost
+                  DB_PORT: 5432
+                  DB_USER: postgres
+                  DB_PASSWORD: postgres
+                  DB_NAME: clankie_test_db
+                  JWT_SECRET: test_jwt_secret_key_for_ci_cd_pipeline
+                  OPENAI_API_KEY: test_openai_key
 
-    - name: Upload test results
-      if: always()
-      uses: actions/upload-artifact@v3
-      with:
-        name: test-results-node-${{ matrix.node-version }}-postgres-${{ matrix.postgres-version }}
-        path: |
-          coverage/
-          test-results/
-        retention-days: 7
+            - name: Cleanup database
+              if: always()
+              run: npm run migrate:undo:all
+              env:
+                  NODE_ENV: test
+                  DB_HOST: localhost
+                  DB_PORT: 5432
+                  DB_USER: postgres
+                  DB_PASSWORD: postgres
+                  DB_NAME: clankie_test_db
+
+            - name: Upload test results
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: test-results-node-${{ matrix.node-version }}-postgres-${{ matrix.postgres-version }}
+                  path: |
+                      coverage/
+                      test-results/
+                  retention-days: 7

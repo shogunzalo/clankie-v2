@@ -1,225 +1,228 @@
 name: Deploy
 
 on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Environment to deploy to'
-        required: true
-        default: 'staging'
-        type: choice
-        options:
-        - staging
-        - production
+    push:
+        branches: [main]
+    workflow_dispatch:
+        inputs:
+            environment:
+                description: "Environment to deploy to"
+                required: true
+                default: "staging"
+                type: choice
+                options:
+                    - staging
+                    - production
 
 jobs:
-  deploy-staging:
-    name: Deploy to Staging
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
-    environment: staging
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+    deploy-staging:
+        name: Deploy to Staging
+        runs-on: ubuntu-latest
+        if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
+        environment: staging
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20.x'
-        cache: 'npm'
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
 
-    - name: Install dependencies
-      run: npm ci
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "20.x"
+                  cache: "npm"
 
-    - name: Run tests
-      run: npm test
-      env:
-        NODE_ENV: test
-        DB_HOST: localhost
-        DB_PORT: 5432
-        DB_USER: postgres
-        DB_PASSWORD: postgres
-        DB_NAME: clankie_test_db
-        JWT_SECRET: test_jwt_secret_key_for_ci_cd_pipeline
-        OPENAI_API_KEY: test_openai_key
+            - name: Install dependencies
+              run: npm ci
 
-    - name: Build application
-      run: npm run build || echo "Build script not configured, skipping..."
+            - name: Run tests
+              run: npm test
+              env:
+                  NODE_ENV: test
+                  DB_HOST: localhost
+                  DB_PORT: 5432
+                  DB_USER: postgres
+                  DB_PASSWORD: postgres
+                  DB_NAME: clankie_test_db
+                  JWT_SECRET: test_jwt_secret_key_for_ci_cd_pipeline
+                  OPENAI_API_KEY: test_openai_key
 
-    - name: Deploy to staging
-      run: |
-        echo "🚀 Deploying to staging environment..."
-        echo "Environment: staging"
-        echo "Branch: ${{ github.ref }}"
-        echo "Commit: ${{ github.sha }}"
-        
-        # Add your staging deployment commands here
-        # Examples:
-        # - rsync -avz --delete dist/ user@staging-server:/var/www/clankie-api/
-        # - docker build -t clankie-api:staging .
-        # - kubectl apply -f k8s/staging/
-        # - aws s3 sync dist/ s3://staging-bucket/
-        
-        echo "✅ Staging deployment completed"
+            - name: Build application
+              run: npm run build || echo "Build script not configured, skipping..."
 
-    - name: Run health check
-      run: |
-        echo "🔍 Running health check..."
-        # Add health check commands here
-        # Example: curl -f https://staging-api.clankie.com/health || exit 1
-        echo "✅ Health check passed"
+            - name: Deploy to staging
+              run: |
+                  echo "🚀 Deploying to staging environment..."
+                  echo "Environment: staging"
+                  echo "Branch: ${{ github.ref }}"
+                  echo "Commit: ${{ github.sha }}"
 
-    - name: Notify deployment
-      run: |
-        echo "📢 Notifying team of staging deployment..."
-        # Add notification logic here (Slack, Discord, email, etc.)
-        echo "Staging deployment notification sent"
+                  # Add your staging deployment commands here
+                  # Examples:
+                  # - rsync -avz --delete dist/ user@staging-server:/var/www/clankie-api/
+                  # - docker build -t clankie-api:staging .
+                  # - kubectl apply -f k8s/staging/
+                  # - aws s3 sync dist/ s3://staging-bucket/
 
-  deploy-production:
-    name: Deploy to Production
-    runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production'
-    environment: production
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+                  echo "✅ Staging deployment completed"
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20.x'
-        cache: 'npm'
+            - name: Run health check
+              run: |
+                  echo "🔍 Running health check..."
+                  # Add health check commands here
+                  # Example: curl -f https://staging-api.clankie.com/health || exit 1
+                  echo "✅ Health check passed"
 
-    - name: Install dependencies
-      run: npm ci
+            - name: Notify deployment
+              run: |
+                  echo "📢 Notifying team of staging deployment..."
+                  # Add notification logic here (Slack, Discord, email, etc.)
+                  echo "Staging deployment notification sent"
 
-    - name: Run full test suite
-      run: npm test
-      env:
-        NODE_ENV: test
-        DB_HOST: localhost
-        DB_PORT: 5432
-        DB_USER: postgres
-        DB_PASSWORD: postgres
-        DB_NAME: clankie_test_db
-        JWT_SECRET: test_jwt_secret_key_for_ci_cd_pipeline
-        OPENAI_API_KEY: test_openai_key
+    deploy-production:
+        name: Deploy to Production
+        runs-on: ubuntu-latest
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production'
+        environment: production
 
-    - name: Run security scan
-      run: npm audit --audit-level=high
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
 
-    - name: Build application
-      run: npm run build || echo "Build script not configured, skipping..."
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "20.x"
+                  cache: "npm"
 
-    - name: Create deployment package
-      run: |
-        echo "📦 Creating deployment package..."
-        tar -czf clankie-api-production.tar.gz \
-          --exclude=node_modules \
-          --exclude=.git \
-          --exclude=coverage \
-          --exclude=*.log \
-          .
+            - name: Install dependencies
+              run: npm ci
 
-    - name: Deploy to production
-      run: |
-        echo "🚀 Deploying to production environment..."
-        echo "Environment: production"
-        echo "Branch: ${{ github.ref }}"
-        echo "Commit: ${{ github.sha }}"
-        
-        # Add your production deployment commands here
-        # Examples:
-        # - rsync -avz --delete dist/ user@prod-server:/var/www/clankie-api/
-        # - docker build -t clankie-api:production .
-        # - kubectl apply -f k8s/production/
-        # - aws s3 sync dist/ s3://production-bucket/
-        
-        echo "✅ Production deployment completed"
+            - name: Run full test suite
+              run: npm test
+              env:
+                  NODE_ENV: test
+                  DB_HOST: localhost
+                  DB_PORT: 5432
+                  DB_USER: postgres
+                  DB_PASSWORD: postgres
+                  DB_NAME: clankie_test_db
+                  JWT_SECRET: test_jwt_secret_key_for_ci_cd_pipeline
+                  OPENAI_API_KEY: test_openai_key
 
-    - name: Run production health check
-      run: |
-        echo "🔍 Running production health check..."
-        # Add production health check commands here
-        # Example: curl -f https://api.clankie.com/health || exit 1
-        echo "✅ Production health check passed"
+            - name: Run security scan
+              run: npm audit --audit-level=high
 
-    - name: Run smoke tests
-      run: |
-        echo "🧪 Running smoke tests..."
-        # Add smoke test commands here
-        # Example: npm run smoke-tests
-        echo "✅ Smoke tests passed"
+            - name: Build application
+              run: npm run build || echo "Build script not configured, skipping..."
 
-    - name: Notify production deployment
-      run: |
-        echo "📢 Notifying team of production deployment..."
-        # Add notification logic here (Slack, Discord, email, etc.)
-        echo "Production deployment notification sent"
+            - name: Create deployment package
+              run: |
+                  echo "📦 Creating deployment package..."
+                  tar -czf clankie-api-production.tar.gz \
+                    --exclude=node_modules \
+                    --exclude=.git \
+                    --exclude=coverage \
+                    --exclude=*.log \
+                    .
 
-    - name: Create release
-      if: success()
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: v${{ github.run_number }}
-        release_name: Release v${{ github.run_number }}
-        body: |
-          ## 🚀 Production Deployment
-          
-          **Environment:** Production
-          **Branch:** ${{ github.ref }}
-          **Commit:** ${{ github.sha }}
-          **Deployed by:** ${{ github.actor }}
-          
-          ### Changes
-          - See commit history for detailed changes
-          
-          ### Health Check
-          - ✅ All tests passed
-          - ✅ Security scan completed
-          - ✅ Health check passed
-          - ✅ Smoke tests passed
-        draft: false
-        prerelease: false
+            - name: Deploy to production
+              run: |
+                  echo "🚀 Deploying to production environment..."
+                  echo "Environment: production"
+                  echo "Branch: ${{ github.ref }}"
+                  echo "Commit: ${{ github.sha }}"
 
-  rollback:
-    name: Rollback Deployment
-    runs-on: ubuntu-latest
-    if: failure() && github.event_name == 'workflow_dispatch'
-    environment: production
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+                  # Add your production deployment commands here
+                  # Examples:
+                  # - rsync -avz --delete dist/ user@prod-server:/var/www/clankie-api/
+                  # - docker build -t clankie-api:production .
+                  # - kubectl apply -f k8s/production/
+                  # - aws s3 sync dist/ s3://production-bucket/
 
-    - name: Rollback deployment
-      run: |
-        echo "🔄 Rolling back deployment..."
-        echo "Environment: production"
-        echo "Reason: Deployment failed"
-        
-        # Add rollback commands here
-        # Examples:
-        # - kubectl rollout undo deployment/clankie-api
-        # - docker tag clankie-api:previous clankie-api:latest
-        # - aws s3 sync s3://backup-bucket/ s3://production-bucket/
-        
-        echo "✅ Rollback completed"
+                  echo "✅ Production deployment completed"
 
-    - name: Verify rollback
-      run: |
-        echo "🔍 Verifying rollback..."
-        # Add rollback verification commands here
-        echo "✅ Rollback verification completed"
+            - name: Run production health check
+              run: |
+                  echo "🔍 Running production health check..."
+                  # Add production health check commands here
+                  # Example: curl -f https://api.clankie.com/health || exit 1
+                  echo "✅ Production health check passed"
 
-    - name: Notify rollback
-      run: |
-        echo "📢 Notifying team of rollback..."
-        # Add notification logic here
-        echo "Rollback notification sent"
+            - name: Run smoke tests
+              run: |
+                  echo "🧪 Running smoke tests..."
+                  # Add smoke test commands here
+                  # Example: npm run smoke-tests
+                  echo "✅ Smoke tests passed"
+
+            - name: Notify production deployment
+              run: |
+                  echo "📢 Notifying team of production deployment..."
+                  # Add notification logic here (Slack, Discord, email, etc.)
+                  echo "Production deployment notification sent"
+
+            - name: Create release
+              if: success()
+              uses: actions/github-script@v7
+              with:
+                  script: |
+                      const { data: release } = await github.rest.repos.createRelease({
+                        owner: context.repo.owner,
+                        repo: context.repo.repo,
+                        tag_name: `v${context.runNumber}`,
+                        name: `Release v${context.runNumber}`,
+                        body: `## 🚀 Production Deployment
+
+                      **Environment:** Production
+                      **Branch:** ${context.ref}
+                      **Commit:** ${context.sha}
+                      **Deployed by:** ${context.actor}
+
+                      ### Changes
+                      - See commit history for detailed changes
+
+                      ### Health Check
+                      - ✅ All tests passed
+                      - ✅ Security scan completed
+                      - ✅ Health check passed
+                      - ✅ Smoke tests passed`,
+                        draft: false,
+                        prerelease: false
+                      });
+                      console.log('Release created:', release.html_url);
+
+    rollback:
+        name: Rollback Deployment
+        runs-on: ubuntu-latest
+        if: failure() && github.event_name == 'workflow_dispatch'
+        environment: production
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Rollback deployment
+              run: |
+                  echo "🔄 Rolling back deployment..."
+                  echo "Environment: production"
+                  echo "Reason: Deployment failed"
+
+                  # Add rollback commands here
+                  # Examples:
+                  # - kubectl rollout undo deployment/clankie-api
+                  # - docker tag clankie-api:previous clankie-api:latest
+                  # - aws s3 sync s3://backup-bucket/ s3://production-bucket/
+
+                  echo "✅ Rollback completed"
+
+            - name: Verify rollback
+              run: |
+                  echo "🔍 Verifying rollback..."
+                  # Add rollback verification commands here
+                  echo "✅ Rollback verification completed"
+
+            - name: Notify rollback
+              run: |
+                  echo "📢 Notifying team of rollback..."
+                  # Add notification logic here
+                  echo "Rollback notification sent"
