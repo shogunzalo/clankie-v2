@@ -85,25 +85,15 @@ jobs:
                   done
 
             - name: Run database migrations
-              run: npm run migrate
+              run: npm run migrate:test
               env:
                   NODE_ENV: test
-                  DB_HOST: localhost
-                  DB_PORT: 5432
-                  DB_USER: postgres
-                  DB_PASSWORD: postgres
-                  DB_NAME: clankie_test_db
 
             - name: Run unit tests
               if: matrix.test-type == 'unit'
               run: npm test -- --testPathPattern="(?!integration)"
               env:
                   NODE_ENV: test
-                  DB_HOST: localhost
-                  DB_PORT: 5432
-                  DB_USER: postgres
-                  DB_PASSWORD: postgres
-                  DB_NAME: clankie_test_db
                   JWT_SECRET: test_jwt_secret_key_for_ci_cd_pipeline
                   OPENAI_API_KEY: test_openai_key
 
@@ -112,11 +102,6 @@ jobs:
               run: npm test -- --testPathPattern="integration"
               env:
                   NODE_ENV: test
-                  DB_HOST: localhost
-                  DB_PORT: 5432
-                  DB_USER: postgres
-                  DB_PASSWORD: postgres
-                  DB_NAME: clankie_test_db
                   JWT_SECRET: test_jwt_secret_key_for_ci_cd_pipeline
                   OPENAI_API_KEY: test_openai_key
 
@@ -125,11 +110,6 @@ jobs:
               run: npm test -- --testPathPattern="e2e"
               env:
                   NODE_ENV: test
-                  DB_HOST: localhost
-                  DB_PORT: 5432
-                  DB_USER: postgres
-                  DB_PASSWORD: postgres
-                  DB_NAME: clankie_test_db
                   JWT_SECRET: test_jwt_secret_key_for_ci_cd_pipeline
                   OPENAI_API_KEY: test_openai_key
 
@@ -138,24 +118,14 @@ jobs:
               run: npm test
               env:
                   NODE_ENV: test
-                  DB_HOST: localhost
-                  DB_PORT: 5432
-                  DB_USER: postgres
-                  DB_PASSWORD: postgres
-                  DB_NAME: clankie_test_db
                   JWT_SECRET: test_jwt_secret_key_for_ci_cd_pipeline
                   OPENAI_API_KEY: test_openai_key
 
             - name: Cleanup database
               if: always()
-              run: npm run migrate:undo:all
+              run: npm run migrate:undo:test
               env:
                   NODE_ENV: test
-                  DB_HOST: localhost
-                  DB_PORT: 5432
-                  DB_USER: postgres
-                  DB_PASSWORD: postgres
-                  DB_NAME: clankie_test_db
 
             - name: Upload test results
               if: always()

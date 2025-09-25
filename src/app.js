@@ -190,6 +190,9 @@ process.on("SIGINT", async () => {
     process.exit(0);
 });
 
-startServer();
+// Only start server if not in test environment
+if (process.env.NODE_ENV !== "test") {
+    startServer();
+}
 
 module.exports = app;
