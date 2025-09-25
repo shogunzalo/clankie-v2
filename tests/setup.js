@@ -11,9 +11,25 @@ global.console = {
     error: jest.fn(),
 };
 
-// Set test environment
+// Set test environment - use in-memory SQLite
 process.env.NODE_ENV = "test";
-process.env.DB_NAME = process.env.DB_NAME_TEST || "clankie_test_db";
+process.env.DB_NAME = "clankie_test_db";
+
+// Mock database connection for tests
+const { Sequelize } = require("sequelize");
+
+// Create in-memory SQLite connection for tests
+global.testSequelize = new Sequelize({
+    dialect: "sqlite",
+    storage: ":memory:",
+    logging: false,
+    pool: {
+        max: 5,
+        min: 0,
+        acquire: 30000,
+        idle: 10000,
+    },
+});
 
 // Mock OpenAI to avoid API calls in tests
 jest.mock("openai", () => {

@@ -17,12 +17,8 @@ module.exports = {
         },
     },
     test: {
-        username: process.env.DB_USER || "postgres",
-        password: process.env.DB_PASSWORD || "password",
-        database: process.env.DB_NAME_TEST || "clankie_test",
-        host: process.env.DB_HOST || "localhost",
-        port: process.env.DB_PORT || 5432,
-        dialect: "postgres",
+        dialect: "sqlite",
+        storage: ":memory:",
         logging: false,
         pool: {
             max: 5,

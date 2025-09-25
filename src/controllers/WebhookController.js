@@ -31,6 +31,9 @@ class WebhookController {
                 // Respond with '403 Forbidden' if verify tokens do not match
                 res.sendStatus(403);
             }
+        } else {
+            // Respond with '403 Forbidden' if mode or token is missing
+            res.sendStatus(403);
         }
     }
 

@@ -98,7 +98,7 @@ describe("WebhookController", () => {
 
             await WebhookController.verifyWebhook(mockReq, mockRes);
 
-            expect(mockRes.sendStatus).not.toHaveBeenCalled();
+            expect(mockRes.sendStatus).toHaveBeenCalledWith(403);
             expect(mockRes.status).not.toHaveBeenCalled();
         });
     });
