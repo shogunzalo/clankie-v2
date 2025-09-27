@@ -21,6 +21,12 @@ const platformRoutes = require("./routes/platform");
 const webhookRoutes = require("./routes/webhook");
 const authRoutes = require("./routes/auth");
 const protectedRoutes = require("./routes/protected");
+const businessPublicRoutes = require("./routes/businessPublic");
+const businessAdminRoutes = require("./routes/businessAdmin");
+const businessSettingsRoutes = require("./routes/businessSettings");
+const businessSettingsFaqRoutes = require("./routes/businessSettingsFaq");
+const businessSettingsToolsRoutes = require("./routes/businessSettingsTools");
+const businessSettingsCalendarRoutes = require("./routes/businessSettingsCalendar");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -132,6 +138,19 @@ app.use("/auth", authRoutes); // Direct auth routes for frontend compatibility
 
 // Protected routes
 app.use("/api/v1/protected", protectedRoutes);
+
+// Business routes (authentication required) - use different prefix to avoid conflicts
+app.use("/api/v1/businesses", businessPublicRoutes);
+
+// Business admin routes (authentication required) - use different prefix to avoid conflicts
+app.use("/api/v1/admin/businesses", businessAdminRoutes);
+
+// Business settings routes (authentication required)
+app.use("/api/business", businessSettingsRoutes);
+app.use("/api/business/faqs", businessSettingsFaqRoutes);
+app.use("/api/business/tool-functions", businessSettingsToolsRoutes);
+app.use("/api/business/calendar-settings", businessSettingsCalendarRoutes);
+app.use("/api/unanswered-questions", businessSettingsToolsRoutes); // Reuse tools routes for unanswered questions
 
 // Webhook routes (no rate limiting for webhooks)
 app.use("/webhooks", webhookRoutes);

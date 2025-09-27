@@ -535,6 +535,246 @@ const options = {
                         },
                     },
                 },
+                ContactInfo: {
+                    type: "object",
+                    properties: {
+                        id: {
+                            type: "integer",
+                            description: "Contact info ID",
+                            example: 1,
+                        },
+                        info_type: {
+                            type: "string",
+                            enum: [
+                                "phone",
+                                "email",
+                                "address",
+                                "website",
+                                "social",
+                            ],
+                            description: "Type of contact information",
+                            example: "phone",
+                        },
+                        label: {
+                            type: "string",
+                            description: "Display label for the contact info",
+                            example: "Main Phone",
+                        },
+                        value: {
+                            type: "string",
+                            description: "Contact information value",
+                            example: "+1-555-0123",
+                        },
+                        is_primary: {
+                            type: "boolean",
+                            description:
+                                "Whether this is the primary contact method",
+                            example: true,
+                        },
+                    },
+                },
+                Service: {
+                    type: "object",
+                    properties: {
+                        id: {
+                            type: "integer",
+                            description: "Service ID",
+                            example: 1,
+                        },
+                        service_name: {
+                            type: "string",
+                            description: "Name of the service",
+                            example: "Web Development",
+                        },
+                        description: {
+                            type: "string",
+                            description: "Service description",
+                            example:
+                                "Custom website development using modern technologies",
+                        },
+                        price: {
+                            type: "number",
+                            description: "Service price",
+                            example: 2500.0,
+                        },
+                        currency: {
+                            type: "string",
+                            description: "Price currency",
+                            example: "USD",
+                        },
+                        duration_minutes: {
+                            type: "integer",
+                            description: "Estimated duration in minutes",
+                            example: 2400,
+                        },
+                        category: {
+                            type: "string",
+                            description: "Service category",
+                            example: "development",
+                        },
+                    },
+                },
+                BusinessContextSection: {
+                    type: "object",
+                    properties: {
+                        id: {
+                            type: "integer",
+                            description: "Context section ID",
+                            example: 1,
+                        },
+                        section_type: {
+                            type: "string",
+                            enum: [
+                                "about",
+                                "services",
+                                "policies",
+                                "procedures",
+                                "custom",
+                            ],
+                            description: "Type of context section",
+                            example: "about",
+                        },
+                        section_key: {
+                            type: "string",
+                            description: "Unique key for the section",
+                            example: "company_overview",
+                        },
+                        section_name: {
+                            type: "string",
+                            description: "Display name for the section",
+                            example: "Company Overview",
+                        },
+                        content: {
+                            type: "string",
+                            description: "Section content",
+                            example:
+                                "TechFlow Solutions is a leading technology company...",
+                        },
+                        display_order: {
+                            type: "integer",
+                            description: "Display order",
+                            example: 1,
+                        },
+                        character_count: {
+                            type: "integer",
+                            description: "Number of characters in content",
+                            example: 234,
+                        },
+                        word_count: {
+                            type: "integer",
+                            description: "Number of words in content",
+                            example: 35,
+                        },
+                        last_accessed: {
+                            type: "string",
+                            format: "date-time",
+                            description: "Last access timestamp",
+                            example: "2024-01-15T09:20:00Z",
+                        },
+                    },
+                },
+                BusinessInfo: {
+                    type: "object",
+                    properties: {
+                        id: {
+                            type: "integer",
+                            description: "Business ID",
+                            example: 1,
+                        },
+                        company_name: {
+                            type: "string",
+                            description: "Company name",
+                            example: "TechFlow Solutions",
+                        },
+                        business_type: {
+                            type: "string",
+                            description: "Type of business",
+                            example: "technology",
+                        },
+                        owner_name: {
+                            type: "string",
+                            description: "Business owner name",
+                            example: "John Doe",
+                        },
+                        email: {
+                            type: "string",
+                            format: "email",
+                            description: "Business email",
+                            example: "contact@techflow.com",
+                        },
+                        phone: {
+                            type: "string",
+                            description: "Business phone number",
+                            example: "+1-555-0123",
+                        },
+                        website: {
+                            type: "string",
+                            format: "uri",
+                            description: "Business website",
+                            example: "https://techflow.com",
+                        },
+                        address: {
+                            type: "string",
+                            description: "Business address",
+                            example: "123 Tech Street",
+                        },
+                        city: {
+                            type: "string",
+                            description: "City",
+                            example: "San Francisco",
+                        },
+                        state: {
+                            type: "string",
+                            description: "State",
+                            example: "CA",
+                        },
+                        country: {
+                            type: "string",
+                            description: "Country",
+                            example: "USA",
+                        },
+                        postal_code: {
+                            type: "string",
+                            description: "Postal code",
+                            example: "94105",
+                        },
+                        primary_language: {
+                            type: "string",
+                            description: "Primary language",
+                            example: "en",
+                        },
+                        auto_detect_language: {
+                            type: "boolean",
+                            description: "Auto-detect language",
+                            example: true,
+                        },
+                        timezone: {
+                            type: "string",
+                            description: "Business timezone",
+                            example: "America/New_York",
+                        },
+                        subscription_plan: {
+                            type: "string",
+                            description: "Subscription plan",
+                            example: "premium",
+                        },
+                        subscription_status: {
+                            type: "string",
+                            description: "Subscription status",
+                            example: "active",
+                        },
+                        onboarding_completed: {
+                            type: "boolean",
+                            description: "Onboarding completed",
+                            example: true,
+                        },
+                        setup_step: {
+                            type: "integer",
+                            description: "Current setup step",
+                            example: 5,
+                        },
+                    },
+                },
                 Error: {
                     type: "object",
                     properties: {
@@ -647,6 +887,18 @@ const options = {
         {
             name: "Webhooks",
             description: "Webhook endpoints for external integrations",
+        },
+        {
+            name: "Business Public",
+            description: "Public business endpoints for business pages",
+        },
+        {
+            name: "Business Admin",
+            description: "Admin endpoints for managing business content",
+        },
+        {
+            name: "Business Settings",
+            description: "Business settings management endpoints",
         },
     ],
 };
