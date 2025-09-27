@@ -20,10 +20,76 @@ const {
 // =====================================
 
 /**
- * @route   POST /api/businesses
- * @desc    Create a new business
- * @access  Private (requires authentication)
- * @body    { name, description, industry, website, email, phone, address, timezone, planType, settings }
+ * @swagger
+ * /api/v1/businesses:
+ *   post:
+ *     summary: Create a new business
+ *     description: Create a new business entity for the authenticated user
+ *     tags: [Business]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - company_name
+ *               - owner_email
+ *             properties:
+ *               company_name:
+ *                 type: string
+ *                 description: Company name
+ *                 example: "Acme Corp"
+ *               owner_email:
+ *                 type: string
+ *                 format: email
+ *                 description: Owner email address
+ *                 example: "owner@acme.com"
+ *               industry:
+ *                 type: string
+ *                 description: Business industry
+ *                 example: "Technology"
+ *               business_type:
+ *                 type: string
+ *                 enum: [SaaS, E-commerce, Service, Manufacturing, Other]
+ *                 description: Type of business
+ *                 example: "SaaS"
+ *               plan_type:
+ *                 type: string
+ *                 enum: [basic, premium, enterprise]
+ *                 description: Subscription plan type
+ *                 example: "premium"
+ *               settings:
+ *                 type: object
+ *                 description: Business-specific settings
+ *                 example: {"timezone": "UTC", "currency": "USD"}
+ *     responses:
+ *       201:
+ *         description: Business created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Business'
+ *       400:
+ *         description: Invalid input data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.post(
     "/",
@@ -33,10 +99,75 @@ router.post(
 );
 
 /**
- * @route   GET /api/businesses
- * @desc    Get all businesses with pagination and filtering
- * @access  Private (requires authentication)
- * @query   { page, limit, industry, planType, isActive }
+ * @swagger
+ * /api/v1/businesses:
+ *   get:
+ *     summary: Get all businesses
+ *     description: Retrieve all businesses with pagination and filtering options
+ *     tags: [Business]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *         description: Page number for pagination
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 10
+ *         description: Number of items per page
+ *       - in: query
+ *         name: industry
+ *         schema:
+ *           type: string
+ *         description: Filter by industry
+ *         example: "Technology"
+ *       - in: query
+ *         name: plan_type
+ *         schema:
+ *           type: string
+ *           enum: [basic, premium, enterprise]
+ *         description: Filter by plan type
+ *         example: "premium"
+ *       - in: query
+ *         name: is_active
+ *         schema:
+ *           type: boolean
+ *         description: Filter by active status
+ *         example: true
+ *     responses:
+ *       200:
+ *         description: List of businesses retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 businesses:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Business'
+ *                 pagination:
+ *                   $ref: '#/components/schemas/Pagination'
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.get(
     "/",

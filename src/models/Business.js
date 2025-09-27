@@ -3,6 +3,12 @@ const { Model } = require("sequelize");
 module.exports = (sequelize, DataTypes) => {
     class Business extends Model {
         static associate(models) {
+            // Business belongs to a User (owner)
+            Business.belongsTo(models.User, {
+                foreignKey: "owner_id",
+                as: "owner",
+            });
+
             // Core business relationships
             Business.hasMany(models.BusinessLanguage, {
                 foreignKey: "business_id",
@@ -90,6 +96,14 @@ module.exports = (sequelize, DataTypes) => {
                 unique: true,
                 validate: {
                     isEmail: true,
+                },
+            },
+            owner_id: {
+                type: DataTypes.INTEGER,
+                allowNull: true,
+                references: {
+                    model: "users",
+                    key: "id",
                 },
             },
             phone: {

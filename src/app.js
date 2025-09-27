@@ -5,6 +5,8 @@ const helmet = require("helmet");
 const morgan = require("morgan");
 const compression = require("compression");
 const rateLimit = require("express-rate-limit");
+const swaggerUi = require("swagger-ui-express");
+const swaggerSpecs = require("./config/swagger");
 
 // Import database connection
 const db = require("./models");
@@ -17,6 +19,8 @@ const faqRoutes = require("./routes/faq");
 const serviceRoutes = require("./routes/service");
 const platformRoutes = require("./routes/platform");
 const webhookRoutes = require("./routes/webhook");
+const authRoutes = require("./routes/auth");
+const protectedRoutes = require("./routes/protected");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -63,7 +67,37 @@ app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
-// Health check endpoint
+/**
+ * @swagger
+ * /health:
+ *   get:
+ *     summary: Health check endpoint
+ *     description: Check the health status of the API server
+ *     tags: [Health]
+ *     responses:
+ *       200:
+ *         description: API is healthy
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: "OK"
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
+ *                   example: "2024-01-15T10:30:00.000Z"
+ *                 uptime:
+ *                   type: number
+ *                   description: Server uptime in seconds
+ *                   example: 3600
+ *                 environment:
+ *                   type: string
+ *                   description: Current environment
+ *                   example: "development"
+ */
 app.get("/health", (req, res) => {
     res.status(200).json({
         status: "OK",
@@ -73,6 +107,17 @@ app.get("/health", (req, res) => {
     });
 });
 
+// API Documentation
+app.use(
+    "/api/v1/docs",
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerSpecs, {
+        explorer: true,
+        customCss: ".swagger-ui .topbar { display: none }",
+        customSiteTitle: "Clankie API Documentation",
+    })
+);
+
 // API routes
 app.use("/api/v1/businesses", businessRoutes);
 app.use("/api/v1/conversations", conversationRoutes);
@@ -81,10 +126,44 @@ app.use("/api/v1/faqs", faqRoutes);
 app.use("/api/v1/services", serviceRoutes);
 app.use("/api/v1/platforms", platformRoutes);
 
+// Authentication routes
+app.use("/api/v1/auth", authRoutes);
+app.use("/auth", authRoutes); // Direct auth routes for frontend compatibility
+
+// Protected routes
+app.use("/api/v1/protected", protectedRoutes);
+
 // Webhook routes (no rate limiting for webhooks)
 app.use("/webhooks", webhookRoutes);
 
-// Root endpoint
+/**
+ * @swagger
+ * /:
+ *   get:
+ *     summary: API root endpoint
+ *     description: Get basic information about the Clankie API
+ *     tags: [Health]
+ *     responses:
+ *       200:
+ *         description: API information
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Clankie API"
+ *                 version:
+ *                   type: string
+ *                   example: "1.0.0"
+ *                 documentation:
+ *                   type: string
+ *                   example: "/api/v1/docs"
+ *                 health:
+ *                   type: string
+ *                   example: "/health"
+ */
 app.get("/", (req, res) => {
     res.json({
         message: "Clankie API",
