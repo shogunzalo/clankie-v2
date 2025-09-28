@@ -174,9 +174,7 @@ module.exports = {
         });
 
         // Add indexes
-        await queryInterface.addIndex("section_templates", ["section_key"], {
-            unique: true,
-        });
+        // Index already created by UNIQUE constraint
         await queryInterface.addIndex("section_templates", ["display_order"]);
         await queryInterface.addIndex("section_templates", ["is_required"]);
 
@@ -189,11 +187,7 @@ module.exports = {
             "language_code",
         ]);
 
-        await queryInterface.addIndex(
-            "business_template_responses",
-            ["business_id", "template_id", "language_code"],
-            { unique: true }
-        );
+        // Unique index already created by UNIQUE constraint
         await queryInterface.addIndex("business_template_responses", [
             "completion_status",
         ]);

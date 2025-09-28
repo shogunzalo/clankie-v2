@@ -7,11 +7,6 @@ module.exports = (sequelize, DataTypes) => {
                 foreignKey: "business_id",
                 as: "business",
             });
-
-            UnansweredQuestion.belongsTo(models.Conversation, {
-                foreignKey: "conversation_id",
-                as: "conversation",
-            });
         }
     }
 
@@ -29,103 +24,147 @@ module.exports = (sequelize, DataTypes) => {
                     model: "businesses",
                     key: "id",
                 },
+                onUpdate: "CASCADE",
+                onDelete: "CASCADE",
             },
-            conversation_id: {
-                type: DataTypes.INTEGER,
-                allowNull: false,
-                references: {
-                    model: "conversations",
-                    key: "id",
-                },
-            },
-            question: {
+            question_text: {
                 type: DataTypes.TEXT,
                 allowNull: false,
-                validate: {
-                    notEmpty: true,
-                },
             },
-            question_language: {
+            normalized_question: {
+                type: DataTypes.TEXT,
+                allowNull: false,
+                comment: "Normalized version for deduplication",
+            },
+            question_hash: {
                 type: DataTypes.STRING,
                 allowNull: false,
-                validate: {
-                    notEmpty: true,
-                    len: [2, 10],
-                },
-            },
-            context: {
-                type: DataTypes.TEXT,
-                allowNull: true,
+                unique: true,
+                comment: "Hash for exact duplicate detection",
             },
             frequency: {
                 type: DataTypes.INTEGER,
                 allowNull: false,
                 defaultValue: 1,
-                validate: {
-                    min: 1,
-                },
             },
-            first_asked: {
+            first_asked_at: {
                 type: DataTypes.DATE,
                 allowNull: false,
+                defaultValue: DataTypes.NOW,
             },
-            last_asked: {
+            last_asked_at: {
                 type: DataTypes.DATE,
                 allowNull: false,
+                defaultValue: DataTypes.NOW,
             },
             status: {
-                type: DataTypes.STRING,
+                type: DataTypes.ENUM("unanswered", "resolved", "ignored", "duplicate"),
                 allowNull: false,
-                defaultValue: "pending",
-                validate: {
-                    isIn: [["pending", "resolved", "ignored", "escalated"]],
-                },
+                defaultValue: "unanswered",
             },
-            resolution_type: {
-                type: DataTypes.STRING,
-                allowNull: true,
-                validate: {
-                    isIn: [
-                        [
-                            "faq_added",
-                            "context_updated",
-                            "manual_response",
-                            "escalated",
-                        ],
-                    ],
-                },
-            },
-            admin_response: {
+            resolution_notes: {
                 type: DataTypes.TEXT,
-                allowNull: true,
-            },
-            admin_response_language: {
-                type: DataTypes.STRING,
                 allowNull: true,
             },
             resolved_at: {
                 type: DataTypes.DATE,
                 allowNull: true,
             },
+            resolved_by: {
+                type: DataTypes.INTEGER,
+                allowNull: true,
+                comment: "User ID who resolved the question",
+            },
+            context_sources_searched: {
+                type: DataTypes.JSONB,
+                allowNull: true,
+                defaultValue: [],
+                comment: "Context sources that were searched but didn't provide answers",
+            },
+            template_sources_searched: {
+                type: DataTypes.JSONB,
+                allowNull: true,
+                defaultValue: [],
+                comment: "Template sources that were searched but didn't provide answers",
+            },
+            conversation_context: {
+                type: DataTypes.JSONB,
+                allowNull: true,
+                defaultValue: {},
+                comment: "Surrounding conversation context when question was asked",
+            },
+            confidence_scores: {
+                type: DataTypes.JSONB,
+                allowNull: true,
+                defaultValue: [],
+                comment: "Array of confidence scores from different attempts",
+            },
+            average_confidence: {
+                type: DataTypes.DECIMAL(3, 2),
+                allowNull: true,
+                comment: "Average confidence score across all attempts",
+            },
+            language_code: {
+                type: DataTypes.STRING,
+                allowNull: false,
+                defaultValue: "en",
+            },
+            source_sessions: {
+                type: DataTypes.JSONB,
+                allowNull: true,
+                defaultValue: [],
+                comment: "Array of session IDs where this question was asked",
+            },
+            priority: {
+                type: DataTypes.ENUM("low", "medium", "high", "critical"),
+                allowNull: false,
+                defaultValue: "medium",
+            },
+            tags: {
+                type: DataTypes.JSONB,
+                allowNull: true,
+                defaultValue: [],
+                comment: "Tags for categorization and filtering",
+            },
+            metadata: {
+                type: DataTypes.JSONB,
+                allowNull: true,
+                defaultValue: {},
+            },
         },
         {
             sequelize,
             modelName: "UnansweredQuestion",
             tableName: "unanswered_questions",
-            timestamps: false,
+            timestamps: true,
+            createdAt: "created_at",
+            updatedAt: "updated_at",
             paranoid: false,
             indexes: [
                 {
-                    fields: ["business_id", "status"],
+                    fields: ["business_id"],
+                },
+                {
+                    fields: ["status"],
                 },
                 {
                     fields: ["frequency"],
                 },
                 {
-                    fields: ["first_asked"],
+                    fields: ["last_asked_at"],
                 },
                 {
-                    fields: ["last_asked"],
+                    fields: ["priority"],
+                },
+                {
+                    fields: ["question_hash"],
+                    unique: true,
+                },
+                {
+                    fields: ["business_id", "status"],
+                },
+                {
+                    fields: ["business_id", "frequency"],
                 },
             ],
         }

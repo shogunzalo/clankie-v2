@@ -64,7 +64,10 @@ const logger = createChildLogger("business-contexts");
  */
 router.get("/:businessId/contexts", verifyFirebaseToken, async (req, res) => {
     try {
-        console.log("GET contexts endpoint called for business:", req.params.businessId);
+        console.log(
+            "GET contexts endpoint called for business:",
+            req.params.businessId
+        );
         const { businessId } = req.params;
         const { lang = "en", section_type, is_active } = req.query;
 
