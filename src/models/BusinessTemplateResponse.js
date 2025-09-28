@@ -3,11 +3,13 @@ const { Model } = require("sequelize");
 module.exports = (sequelize, DataTypes) => {
     class BusinessTemplateResponse extends Model {
         static associate(models) {
+            // BusinessTemplateResponse belongs to Business
             BusinessTemplateResponse.belongsTo(models.Business, {
                 foreignKey: "business_id",
                 as: "business",
             });
 
+            // BusinessTemplateResponse belongs to SectionTemplate
             BusinessTemplateResponse.belongsTo(models.SectionTemplate, {
                 foreignKey: "template_id",
                 as: "template",
@@ -41,20 +43,18 @@ module.exports = (sequelize, DataTypes) => {
             language_code: {
                 type: DataTypes.STRING,
                 allowNull: false,
+                defaultValue: "en",
                 validate: {
                     notEmpty: true,
-                    len: [2, 10],
+                    len: [2, 5],
                 },
             },
             content: {
                 type: DataTypes.TEXT,
-                allowNull: false,
-                validate: {
-                    notEmpty: true,
-                },
+                allowNull: true,
             },
             content_embedding: {
-                type: DataTypes.ARRAY(DataTypes.FLOAT),
+                type: DataTypes.JSONB,
                 allowNull: true,
             },
             embedding_model: {
@@ -84,9 +84,9 @@ module.exports = (sequelize, DataTypes) => {
             completion_status: {
                 type: DataTypes.STRING,
                 allowNull: false,
-                defaultValue: "incomplete",
+                defaultValue: "not_started",
                 validate: {
-                    isIn: [["incomplete", "complete", "needs_review"]],
+                    isIn: [["not_started", "in_progress", "completed"]],
                 },
             },
             search_hits: {
@@ -107,18 +107,23 @@ module.exports = (sequelize, DataTypes) => {
             modelName: "BusinessTemplateResponse",
             tableName: "business_template_responses",
             timestamps: true,
+            createdAt: "created_at",
+            updatedAt: "updated_at",
             paranoid: false,
             indexes: [
                 {
                     unique: true,
                     fields: ["business_id", "template_id", "language_code"],
-                    name: "unique_business_template_response",
+                    name: "unique_business_template_language",
                 },
                 {
                     fields: ["completion_status"],
                 },
                 {
                     fields: ["search_hits"],
+                },
+                {
+                    fields: ["last_accessed"],
                 },
             ],
         }

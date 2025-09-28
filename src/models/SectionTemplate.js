@@ -3,11 +3,13 @@ const { Model } = require("sequelize");
 module.exports = (sequelize, DataTypes) => {
     class SectionTemplate extends Model {
         static associate(models) {
+            // SectionTemplate has many translations
             SectionTemplate.hasMany(models.SectionTemplateTranslation, {
                 foreignKey: "template_id",
                 as: "translations",
             });
 
+            // SectionTemplate has many business responses
             SectionTemplate.hasMany(models.BusinessTemplateResponse, {
                 foreignKey: "template_id",
                 as: "businessResponses",
@@ -43,16 +45,18 @@ module.exports = (sequelize, DataTypes) => {
             },
             character_min: {
                 type: DataTypes.INTEGER,
-                allowNull: true,
+                allowNull: false,
+                defaultValue: 0,
                 validate: {
                     min: 0,
                 },
             },
             character_max: {
                 type: DataTypes.INTEGER,
-                allowNull: true,
+                allowNull: false,
+                defaultValue: 5000,
                 validate: {
-                    min: 0,
+                    min: 1,
                 },
             },
         },
@@ -71,6 +75,9 @@ module.exports = (sequelize, DataTypes) => {
                 },
                 {
                     fields: ["display_order"],
+                },
+                {
+                    fields: ["is_required"],
                 },
             ],
         }

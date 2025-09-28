@@ -128,6 +128,8 @@ module.exports = (sequelize, DataTypes) => {
             modelName: "BusinessContextSection",
             tableName: "business_context_sections",
             timestamps: true,
+            createdAt: "created_at",
+            updatedAt: "updated_at",
             paranoid: false,
             indexes: [
                 {

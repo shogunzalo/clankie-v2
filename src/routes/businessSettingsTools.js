@@ -4,6 +4,9 @@ const express = require("express");
 const router = express.Router();
 const { Business, UnansweredQuestion } = require("../models");
 const { verifyFirebaseToken } = require("../middleware/firebaseAuth");
+const { createChildLogger } = require("../config/logger");
+
+const logger = createChildLogger("business-settings-tools");
 
 /**
  * @swagger
@@ -50,12 +53,15 @@ const { verifyFirebaseToken } = require("../middleware/firebaseAuth");
  */
 router.get("/", verifyFirebaseToken, async (req, res) => {
     try {
+        logger.info("Getting tool functions for user", { userId: req.user.id });
+
         const business = await Business.findOne({
             where: { owner_id: req.user.id },
             attributes: ["ai_tool_functions"],
         });
 
         if (!business) {
+            logger.warn("Business not found for user", { userId: req.user.id });
             return res.status(404).json({
                 success: false,
                 error: "Business not found",
@@ -63,12 +69,18 @@ router.get("/", verifyFirebaseToken, async (req, res) => {
             });
         }
 
+        logger.debug("Found business for tool functions", {
+            businessId: business.id,
+            userId: req.user.id,
+        });
+
         // Default tool functions
         const defaultToolFunctions = [
             {
                 id: "auto_response",
                 name: "Auto Response Generator",
-                description: "Automatically generate responses to common customer inquiries",
+                description:
+                    "Automatically generate responses to common customer inquiries",
                 is_enabled: true,
                 category: "communication",
                 last_used: null,
@@ -107,14 +119,26 @@ router.get("/", verifyFirebaseToken, async (req, res) => {
             },
         ];
 
-        const toolFunctions = business.ai_tool_functions || defaultToolFunctions;
+        const toolFunctions =
+            business.ai_tool_functions || defaultToolFunctions;
+
+        logger.info("Retrieved tool functions successfully", {
+            businessId: business.id,
+            userId: req.user.id,
+            toolCount: toolFunctions.length,
+            usingDefaults: !business.ai_tool_functions,
+        });
 
         res.json({
             success: true,
             data: toolFunctions,
         });
     } catch (error) {
-        console.error("Get tool functions error:", error);
+        logger.error("Get tool functions error", {
+            error: error.message,
+            stack: error.stack,
+            userId: req.user?.id,
+        });
         res.status(500).json({
             success: false,
             error: "Internal server error",
@@ -187,7 +211,9 @@ router.put("/:id", verifyFirebaseToken, async (req, res) => {
         }
 
         const currentFunctions = business.ai_tool_functions || [];
-        const functionIndex = currentFunctions.findIndex(func => func.id === id);
+        const functionIndex = currentFunctions.findIndex(
+            (func) => func.id === id
+        );
 
         if (functionIndex === -1) {
             return res.status(404).json({
@@ -200,8 +226,12 @@ router.put("/:id", verifyFirebaseToken, async (req, res) => {
         // Update the specific function
         currentFunctions[functionIndex] = {
             ...currentFunctions[functionIndex],
-            is_enabled: is_enabled !== undefined ? is_enabled : currentFunctions[functionIndex].is_enabled,
-            configuration: configuration || currentFunctions[functionIndex].configuration,
+            is_enabled:
+                is_enabled !== undefined
+                    ? is_enabled
+                    : currentFunctions[functionIndex].is_enabled,
+            configuration:
+                configuration || currentFunctions[functionIndex].configuration,
             updated_at: new Date(),
         };
 
@@ -294,7 +324,7 @@ router.post("/:id/test", verifyFirebaseToken, async (req, res) => {
         }
 
         const currentFunctions = business.ai_tool_functions || [];
-        const toolFunction = currentFunctions.find(func => func.id === id);
+        const toolFunction = currentFunctions.find((func) => func.id === id);
 
         if (!toolFunction) {
             return res.status(404).json({
@@ -314,12 +344,14 @@ router.post("/:id/test", verifyFirebaseToken, async (req, res) => {
 
         // Mock test execution (in real implementation, this would call the actual tool function)
         const startTime = Date.now();
-        
+
         // Simulate different test results based on tool function type
         let testResult, status;
         switch (id) {
             case "auto_response":
-                testResult = "Test response generated successfully for: " + (test_input || "Hello, how can I help you?");
+                testResult =
+                    "Test response generated successfully for: " +
+                    (test_input || "Hello, how can I help you?");
                 status = "success";
                 break;
             case "sentiment_analysis":
@@ -444,12 +476,13 @@ router.get("/", verifyFirebaseToken, async (req, res) => {
             whereClause.is_resolved = status === "resolved";
         }
 
-        const { count, rows: questions } = await UnansweredQuestion.findAndCountAll({
-            where: whereClause,
-            order: [["created_at", "DESC"]],
-            limit: parseInt(limit),
-            offset,
-        });
+        const { count, rows: questions } =
+            await UnansweredQuestion.findAndCountAll({
+                where: whereClause,
+                order: [["created_at", "DESC"]],
+                limit: parseInt(limit),
+                offset,
+            });
 
         const totalPages = Math.ceil(count / parseInt(limit));
 

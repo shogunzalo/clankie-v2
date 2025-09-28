@@ -3,6 +3,7 @@ const { Model } = require("sequelize");
 module.exports = (sequelize, DataTypes) => {
     class SectionTemplateTranslation extends Model {
         static associate(models) {
+            // SectionTemplateTranslation belongs to SectionTemplate
             SectionTemplateTranslation.belongsTo(models.SectionTemplate, {
                 foreignKey: "template_id",
                 as: "template",
@@ -30,7 +31,7 @@ module.exports = (sequelize, DataTypes) => {
                 allowNull: false,
                 validate: {
                     notEmpty: true,
-                    len: [2, 10],
+                    len: [2, 5],
                 },
             },
             section_name: {
@@ -65,6 +66,9 @@ module.exports = (sequelize, DataTypes) => {
                     unique: true,
                     fields: ["template_id", "language_code"],
                     name: "unique_template_language",
+                },
+                {
+                    fields: ["language_code"],
                 },
             ],
         }

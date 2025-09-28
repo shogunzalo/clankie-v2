@@ -7,6 +7,7 @@ const compression = require("compression");
 const rateLimit = require("express-rate-limit");
 const swaggerUi = require("swagger-ui-express");
 const swaggerSpecs = require("./config/swagger");
+const { logger } = require("./config/logger");
 
 // Import database connection
 const db = require("./models");
@@ -27,6 +28,8 @@ const businessSettingsRoutes = require("./routes/businessSettings");
 const businessSettingsFaqRoutes = require("./routes/businessSettingsFaq");
 const businessSettingsToolsRoutes = require("./routes/businessSettingsTools");
 const businessSettingsCalendarRoutes = require("./routes/businessSettingsCalendar");
+const businessTemplatesRoutes = require("./routes/businessTemplates");
+const businessContextsRoutes = require("./routes/businessContexts");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -152,6 +155,10 @@ app.use("/api/business/tool-functions", businessSettingsToolsRoutes);
 app.use("/api/business/calendar-settings", businessSettingsCalendarRoutes);
 app.use("/api/unanswered-questions", businessSettingsToolsRoutes); // Reuse tools routes for unanswered questions
 
+// Dual-context system routes
+app.use("/api/v1/businesses", businessTemplatesRoutes);
+app.use("/api/v1/businesses", businessContextsRoutes);
+
 // Webhook routes (no rate limiting for webhooks)
 app.use("/webhooks", webhookRoutes);
 
@@ -248,7 +255,7 @@ const startServer = async () => {
     try {
         // Test database connection
         await db.sequelize.authenticate();
-        console.log("✅ Database connection established successfully");
+        logger.info("Database connection established successfully");
 
         // Sync database (only in development)
         if (process.env.NODE_ENV === "development") {
@@ -259,18 +266,19 @@ const startServer = async () => {
         // Start server (skip in test environment)
         if (process.env.NODE_ENV !== "test") {
             app.listen(PORT, () => {
-                console.log(`🚀 Server is running on port ${PORT}`);
-                console.log(
-                    `📖 API Documentation: http://localhost:${PORT}/api/v1/docs`
-                );
-                console.log(`🏥 Health Check: http://localhost:${PORT}/health`);
-                console.log(
-                    `🌍 Environment: ${process.env.NODE_ENV || "development"}`
-                );
+                logger.info("Server started successfully", {
+                    port: PORT,
+                    environment: process.env.NODE_ENV || "development",
+                    apiDocs: `http://localhost:${PORT}/api/v1/docs`,
+                    healthCheck: `http://localhost:${PORT}/health`,
+                });
             });
         }
     } catch (error) {
-        console.error("❌ Unable to start server:", error);
+        logger.error("Unable to start server", {
+            error: error.message,
+            stack: error.stack,
+        });
         process.exit(1);
     }
 };

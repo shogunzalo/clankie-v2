@@ -163,6 +163,8 @@ module.exports = (sequelize, DataTypes) => {
             modelName: "Business",
             tableName: "businesses",
             timestamps: true,
+            createdAt: "created_at",
+            updatedAt: "updated_at",
             paranoid: false,
             indexes: [
                 {

@@ -4,6 +4,9 @@ const express = require("express");
 const router = express.Router();
 const { FaqItem, FaqKeyword, Business } = require("../models");
 const { verifyFirebaseToken } = require("../middleware/firebaseAuth");
+const { createChildLogger } = require("../config/logger");
+
+const logger = createChildLogger("business-settings-faq");
 
 /**
  * @swagger
@@ -36,17 +39,25 @@ const { verifyFirebaseToken } = require("../middleware/firebaseAuth");
  */
 router.get("/", verifyFirebaseToken, async (req, res) => {
     try {
+        logger.info("Getting FAQs for user", { userId: req.user.id });
+
         const business = await Business.findOne({
             where: { owner_id: req.user.id },
         });
 
         if (!business) {
+            logger.warn("Business not found for user", { userId: req.user.id });
             return res.status(404).json({
                 success: false,
                 error: "Business not found",
                 code: "BUSINESS_NOT_FOUND",
             });
         }
+
+        logger.debug("Found business", {
+            businessId: business.id,
+            userId: req.user.id,
+        });
 
         const faqs = await FaqItem.findAll({
             where: { business_id: business.id },
@@ -57,7 +68,16 @@ router.get("/", verifyFirebaseToken, async (req, res) => {
                     attributes: ["id", "keyword", "weight"],
                 },
             ],
-            order: [["category", "ASC"], ["created_at", "ASC"]],
+            order: [
+                ["category", "ASC"],
+                ["created_at", "ASC"],
+            ],
+        });
+
+        logger.info("Retrieved FAQs successfully", {
+            businessId: business.id,
+            userId: req.user.id,
+            faqCount: faqs.length,
         });
 
         res.json({
@@ -65,7 +85,11 @@ router.get("/", verifyFirebaseToken, async (req, res) => {
             data: faqs,
         });
     } catch (error) {
-        console.error("Get FAQs error:", error);
+        logger.error("Get FAQs error", {
+            error: error.message,
+            stack: error.stack,
+            userId: req.user?.id,
+        });
         res.status(500).json({
             success: false,
             error: "Internal server error",
@@ -138,10 +162,29 @@ router.get("/", verifyFirebaseToken, async (req, res) => {
  */
 router.post("/", verifyFirebaseToken, async (req, res) => {
     try {
-        const { question, answer, category = "general", language_code = "en", keywords = [] } = req.body;
+        const {
+            question,
+            answer,
+            category = "general",
+            language_code = "en",
+            keywords = [],
+        } = req.body;
+
+        logger.info("Creating FAQ", {
+            userId: req.user.id,
+            questionLength: question?.length,
+            answerLength: answer?.length,
+            category,
+            keywordsCount: keywords?.length,
+        });
 
         // Validate required fields
         if (!question || question.length < 10 || question.length > 500) {
+            logger.warn("Invalid question validation", {
+                userId: req.user.id,
+                questionLength: question?.length,
+                question: question?.substring(0, 100), // Log first 100 chars for debugging
+            });
             return res.status(400).json({
                 success: false,
                 error: "Question must be between 10 and 500 characters",
@@ -150,6 +193,11 @@ router.post("/", verifyFirebaseToken, async (req, res) => {
         }
 
         if (!answer || answer.length < 10 || answer.length > 2000) {
+            logger.warn("Invalid answer validation", {
+                userId: req.user.id,
+                answerLength: answer?.length,
+                answer: answer?.substring(0, 100), // Log first 100 chars for debugging
+            });
             return res.status(400).json({
                 success: false,
                 error: "Answer must be between 10 and 2000 characters",
@@ -162,12 +210,18 @@ router.post("/", verifyFirebaseToken, async (req, res) => {
         });
 
         if (!business) {
+            logger.warn("Business not found for user", { userId: req.user.id });
             return res.status(404).json({
                 success: false,
                 error: "Business not found",
                 code: "BUSINESS_NOT_FOUND",
             });
         }
+
+        logger.debug("Found business for FAQ creation", {
+            businessId: business.id,
+            userId: req.user.id,
+        });
 
         // Create FAQ
         const faq = await FaqItem.create({
@@ -178,11 +232,23 @@ router.post("/", verifyFirebaseToken, async (req, res) => {
             language_code,
             is_active: true,
             usage_count: 0,
-            success_rate: null,
+            success_rate: 0.0,
+        });
+
+        logger.info("FAQ created successfully", {
+            faqId: faq.id,
+            businessId: business.id,
+            userId: req.user.id,
+            category,
         });
 
         // Create keywords if provided
         if (keywords.length > 0) {
+            logger.debug("Creating keywords for FAQ", {
+                faqId: faq.id,
+                keywordsCount: keywords.length,
+            });
+
             await Promise.all(
                 keywords.map((keyword) =>
                     FaqKeyword.create({
@@ -192,6 +258,11 @@ router.post("/", verifyFirebaseToken, async (req, res) => {
                     })
                 )
             );
+
+            logger.info("Keywords created successfully", {
+                faqId: faq.id,
+                keywordsCreated: keywords.length,
+            });
         }
 
         // Reload FAQ with keywords
@@ -205,12 +276,29 @@ router.post("/", verifyFirebaseToken, async (req, res) => {
             ],
         });
 
+        logger.info("FAQ creation completed successfully", {
+            faqId: faq.id,
+            businessId: business.id,
+            userId: req.user.id,
+            totalKeywords: createdFaq.keywords?.length || 0,
+        });
+
         res.status(201).json({
             success: true,
             data: createdFaq,
         });
     } catch (error) {
-        console.error("Create FAQ error:", error);
+        logger.error("Create FAQ error", {
+            error: error.message,
+            stack: error.stack,
+            userId: req.user?.id,
+            requestBody: {
+                questionLength: req.body?.question?.length,
+                answerLength: req.body?.answer?.length,
+                category: req.body?.category,
+                keywordsCount: req.body?.keywords?.length,
+            },
+        });
         res.status(500).json({
             success: false,
             error: "Internal server error",
@@ -343,7 +431,7 @@ router.put("/:id", verifyFirebaseToken, async (req, res) => {
         if (keywords && Array.isArray(keywords)) {
             // Delete existing keywords
             await FaqKeyword.destroy({ where: { faq_id: id } });
-            
+
             // Create new keywords
             if (keywords.length > 0) {
                 await Promise.all(
@@ -447,7 +535,7 @@ router.delete("/:id", verifyFirebaseToken, async (req, res) => {
 
         // Delete associated keywords first
         await FaqKeyword.destroy({ where: { faq_id: id } });
-        
+
         // Delete FAQ
         await faq.destroy();
 
