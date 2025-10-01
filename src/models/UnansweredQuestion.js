@@ -93,6 +93,11 @@ module.exports = (sequelize, DataTypes) => {
                 defaultValue: {},
                 comment: "Surrounding conversation context when question was asked",
             },
+            conversation_id: {
+                type: DataTypes.INTEGER,
+                allowNull: true,
+                comment: "ID of the conversation where the question was asked",
+            },
             confidence_scores: {
                 type: DataTypes.JSONB,
                 allowNull: true,

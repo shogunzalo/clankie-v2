@@ -760,6 +760,10 @@ const options = {
                 name: "Business Contexts",
                 description: "Custom context sections endpoints",
             },
+            {
+                name: "Unanswered Questions",
+                description: "Unanswered questions management and FAQ creation",
+            },
         ],
     },
     apis: [

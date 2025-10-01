@@ -31,6 +31,7 @@ const businessSettingsCalendarRoutes = require("./routes/businessSettingsCalenda
 const businessTemplatesRoutes = require("./routes/businessTemplates");
 const businessContextsRoutes = require("./routes/businessContexts");
 const chatbotTestingRoutes = require("./routes/chatbotTesting");
+const unansweredQuestionsRoutes = require("./routes/unansweredQuestions");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -154,12 +155,12 @@ app.use("/api/business", businessSettingsRoutes);
 app.use("/api/business/faqs", businessSettingsFaqRoutes);
 app.use("/api/business/tool-functions", businessSettingsToolsRoutes);
 app.use("/api/business/calendar-settings", businessSettingsCalendarRoutes);
-app.use("/api/unanswered-questions", businessSettingsToolsRoutes); // Reuse tools routes for unanswered questions
 
 // Dual-context system routes
 app.use("/api/v1/businesses", businessTemplatesRoutes);
 app.use("/api/v1/businesses", businessContextsRoutes);
 app.use("/api/v1/chatbot-testing", chatbotTestingRoutes);
+app.use("/api/unanswered-questions", unansweredQuestionsRoutes); // Unanswered questions management
 
 // Webhook routes (no rate limiting for webhooks)
 app.use("/webhooks", webhookRoutes);
