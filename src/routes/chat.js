@@ -6,6 +6,7 @@ const { body, validationResult } = require("express-validator");
 const { createChildLogger } = require("../config/logger");
 const ContextSearchService = require("../services/contextSearchService");
 const AIResponseService = require("../services/aiResponseService");
+const SecurityGuardrailsService = require("../services/securityGuardrailsService");
 const { Business } = require("../models");
 
 const logger = createChildLogger("chat-routes");
@@ -204,6 +205,31 @@ router.post("/", validateChatRequest, async (req, res) => {
         // Initialize services
         const contextSearchService = new ContextSearchService();
         const aiResponseService = new AIResponseService();
+        const securityGuardrailsService = new SecurityGuardrailsService();
+
+        // Validate input for security threats
+        const securityValidation = securityGuardrailsService.validateInput(
+            userMessage,
+            {
+                businessContext: businessContext,
+                conversationHistory: conversationHistory,
+            }
+        );
+
+        if (!securityValidation.isSafe) {
+            logger.warn("Unsafe input detected in chat route", {
+                flags: securityValidation.flags,
+                userMessage: userMessage.substring(0, 100),
+                securityFlags: securityValidation.flags.map((f) => f.type),
+                ip: req.ip || req.connection.remoteAddress,
+            });
+
+            return res.status(400).json({
+                error: "Request contains potentially harmful content",
+                message: "Please rephrase your question and try again.",
+                security_flags: securityValidation.flags.map((f) => f.type),
+            });
+        }
 
         // For demo purposes, use a default business ID if none provided
         // In production, you'd get this from authentication or request
@@ -211,7 +237,7 @@ router.post("/", validateChatRequest, async (req, res) => {
 
         // Search for relevant context (this will return empty for demo businesses)
         const contextSearchResult = await contextSearchService.searchContexts({
-            query: userMessage,
+            query: securityValidation.sanitizedInput,
             businessId,
             language: "en",
             threshold: 0.1,
@@ -233,7 +259,7 @@ router.post("/", validateChatRequest, async (req, res) => {
 
         // Generate AI response using business context
         const aiResponse = await aiResponseService.generateResponse({
-            question: userMessage,
+            question: securityValidation.sanitizedInput,
             contextSources: contextSearchResult.results,
             confidenceScore: calculateConfidenceScore(
                 contextSearchResult.results,
@@ -256,7 +282,7 @@ router.post("/", validateChatRequest, async (req, res) => {
             try {
                 // Generate response using business context directly
                 response = await aiResponseService.callOpenAI(
-                    userMessage,
+                    securityValidation.sanitizedInput,
                     context,
                     "en"
                 );
