@@ -32,9 +32,10 @@ const businessTemplatesRoutes = require("./routes/businessTemplates");
 const businessContextsRoutes = require("./routes/businessContexts");
 const chatbotTestingRoutes = require("./routes/chatbotTesting");
 const unansweredQuestionsRoutes = require("./routes/unansweredQuestions");
+const chatRoutes = require("./routes/chat");
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
 // Security middleware
 app.use(helmet());
@@ -62,8 +63,11 @@ const limiter = rateLimit({
         error: "Too many requests from this IP, please try again later.",
     },
     skip: (req) => {
-        // Skip rate limiting for webhook endpoints
-        return req.path.startsWith("/webhooks/");
+        // Skip rate limiting for webhook endpoints and chat endpoint
+        return (
+            req.path.startsWith("/webhooks/") ||
+            req.path.startsWith("/api/test-chat")
+        );
     },
 });
 app.use("/api/", limiter);
@@ -161,6 +165,11 @@ app.use("/api/v1/businesses", businessTemplatesRoutes);
 app.use("/api/v1/businesses", businessContextsRoutes);
 app.use("/api/v1/chatbot-testing", chatbotTestingRoutes);
 app.use("/api/unanswered-questions", unansweredQuestionsRoutes); // Unanswered questions management
+
+// Chat API routes
+console.log("Loading chat routes...");
+app.use("/api/test-chat", chatRoutes); // Chat endpoint at /api/test-chat
+console.log("Chat routes loaded successfully");
 
 // Webhook routes (no rate limiting for webhooks)
 app.use("/webhooks", webhookRoutes);
